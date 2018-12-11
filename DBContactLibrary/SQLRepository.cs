@@ -2,6 +2,7 @@
 using System.Data.SqlClient;
 using System.Data;
 using System.Collections.Generic;
+using DBContactLibrary.Models;
 
 namespace DBContactLibrary
 {
@@ -156,7 +157,7 @@ namespace DBContactLibrary
                     SqlParameter sqlLastName = new SqlParameter("@lastName", lastName);
 
                     SqlParameter sqlId = new SqlParameter("@ID", Id);
-                   
+
 
                     command.Parameters.Add(sqlSsn);
                     command.Parameters.Add(sqlFirstName);
@@ -192,12 +193,12 @@ namespace DBContactLibrary
                     command.CommandType = CommandType.StoredProcedure;
                     command.Connection = connection;
 
-                    
+
 
                     SqlParameter sqlId = new SqlParameter("@ID", id);
 
 
-                   
+
                     command.Parameters.Add(sqlId);
 
                     int returnValue = command.ExecuteNonQuery();
@@ -217,5 +218,82 @@ namespace DBContactLibrary
             }
         }
 
+        public int CreateAddress(string street, string city, string zip)
+        {
+            using (SqlConnection connection = new SqlConnection(connString))
+            {
+                connection.Open();
+
+                using (SqlCommand command = new SqlCommand())
+                {
+                    command.CommandText = "CreateAddress";
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Connection = connection;
+
+                    SqlParameter sqlStreet = new SqlParameter("@street", street);
+                    SqlParameter sqlCity = new SqlParameter("@city", city);
+                    SqlParameter sqlZip = new SqlParameter("@zip", zip);
+
+                    SqlParameter sqlId = new SqlParameter("@ID", SqlDbType.Int)
+                    {
+                        Direction = ParameterDirection.Output
+                    };
+
+                    command.Parameters.Add(sqlStreet);
+                    command.Parameters.Add(sqlCity);
+                    command.Parameters.Add(sqlZip);
+                    command.Parameters.Add(sqlId);
+
+                    int returnValue = command.ExecuteNonQuery();//returns a number of rows been affacted
+
+                    connection.Close();
+                    if (returnValue > 0)
+                        return int.Parse(sqlId.Value.ToString());
+                    else return 0;
+                }
+
+            }
+        }// Returns ID
+
+        public Address ReadAddress(int Id)
+        {
+            using (SqlConnection connection = new SqlConnection(connString))
+            {
+                connection.Open();
+
+                using (SqlCommand command = new SqlCommand())
+                {
+                    command.CommandText = "ReadAddress";
+                    command.CommandType = CommandType.StoredProcedure;
+                    command.Connection = connection;
+                    SqlParameter sqlId = new SqlParameter("@id", Id);
+                    command.Parameters.Add(sqlId);
+
+                    SqlDataReader reader = command.ExecuteReader();
+
+                    if (reader.Read())
+                    {
+                        Address address = new Address
+                        {
+                            ID = (int)reader["Id"],
+                            Street =(string)reader["Street"],
+                            City = (string)reader["City"],
+                            Zip = (string)reader["Zip"]
+                        };
+                        connection.Close();
+                        return address;
+                    }
+                    else
+                    {
+                        connection.Close();
+                        return null;
+                    } 
+
+                }
+
+                
+            }
+
         }
+    }
 }
